@@ -1,0 +1,143 @@
+
+Hadoop Installation Steps
+
+https://t.me/+JgdqD7yATtA5NDQ1 https://t.me/+JgdqD7yATtA5NDQ1
+
+
+commands to install jdk 8
+
+1. sudo apt-get install openjdk-8-jdk
+2. sudo update-alternatives --config java
+3. select the option for java-8
+
+
+//jdk version 1.7 or 1.8 n
+To check jdk version write java -version
+
+//install jdk if not there
+sudo apt-get install openjdk-8-jdk sudo update-alternatives --config java
+
+//Add a dedicated Hadoop User
+1.sudo addgroup hadoop
+2.sudo adduser --ingroup hadoop hduser
+3.sudo adduser hduser sudo
+
+//Install SSH
+sudo apt-get install openssh-server which ssh
+which sshd
+
+//Create and setup SSH certificates
+1.su hduser
+2.cd
+3.ssh-keygen -t rsa -P ""
+4.cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
+5.To check if ssh works, type: ssh localhost
+6.exit
+
+//Install Hadoop
+1.Download:Hadoop 2.9 version hadoop-2.9.0.tar.gz
+2.sudo cp /home/dpl05/Downloads/hadoop-2.9.0.tar.gz /home/hduser/
+3.go the location where the downloaded file is present and Extract using below command
+4.tar -xvf hadoop-2.9.0.tar.gz
+5.sudo mv hadoop-2.9.0 /usr/local/hadoop //In case of error remove hadoop folder using sudo rm -r /usr/local/hadoop
+6.sudo chown -R hduser /usr/local/
+
+//Setup Configuration Files
+1.sudo gedit ~/.bashrc
+//Add these to end of file , if your java version is 8 change to 8
+
+#HADOOP VARIABLES START
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64 export HADOOP_HOME=/usr/local/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin export PATH=$PATH:$HADOOP_HOME/sbin
+export HADOOP_MAPRED_HOME=$HADOOP_HOME export HADOOP_COMMON_HOME=$HADOOP_HOME export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib" #HADOOP VARIABLES END
+2.source ~/.bashrc
+3.sudo gedit /usr/local/hadoop/etc/hadoop/hadoop-env.sh
+//Add this line
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+//If your jdk version is 1.8 then change java-7 to java-8
+
+// /usr/local/hadoop/etc/hadoop/core-site.xml:
+1. sudo gedit /usr/local/hadoop/etc/hadoop/core-site.xml
+//Add these lines in between configuration tag
+<property>
+<name>fs.default.name</name>
+<value>hdfs://localhost:9000</value>
+</property>
+
+// /usr/local/hadoop/etc/hadoop/mapred-site.xml
+1.sudo gedit /usr/local/hadoop/etc/hadoop/mapred-site.xml.template
+//Add this in between configuration Tags
+<property>
+<name>mapreduce.framework.name</name>
+<value>yarn</value>
+</property>
+2.sudo cp /usr/local/hadoop/etc/hadoop/mapred-site.xml.template
+/usr/local/hadoop/etc/hadoop/mapred-site.xml
+
+
+// /usr/local/hadoop/etc/hadoop/hdfs-site.xml
+1.sudo mkdir -p /usr/local/hadoop_tmp/hdfs/namenode
+2.sudo mkdir -p /usr/local/hadoop_tmp/hdfs/datanode
+3.sudo chown -R hduser:hadoop /usr/local/hadoop_tmp
+4.sudo gedit /usr/local/hadoop/etc/hadoop/hdfs-site.xml
+//Add this in between configuration tags
+<property>
+
+<name>dfs.replication</name>
+<value>1</value>
+</property>
+<property>
+<name>dfs.namenode.name.dir</name>
+<value>file:/usr/local/hadoop_tmp/hdfs/namenode</value>
+</property>
+<property>
+<name>dfs.datanode.data.dir</name>
+<value>file:/usr/local/hadoop_tmp/hdfs/datanode</value>
+</property>
+
+//Edit the yarn-site.xml file and paste the code given below in <configuration> tags.
+1. sudo gedit /usr/local/hadoop/etc/hadoop/yarn-site.xml
+//Add this in between configuration tags
+<property>
+<name>yarn.nodemanager.aux-services</name>
+<value>mapreduce_shuffle</value>
+</property>
+<property>
+<name>yarn.nodemanager.aux- services.mapreduce.shuffle.class</name>
+
+<value>org.apache.hadoop.mapred.ShuffleHandler</value>
+</property>
+
+//Format the New Hadoop Filesystem 1.hadoop namenode -format
+You can use the new Command as hadoop namenode-format is deprecated
+1. hdfs namenode -format
+
+//Starting Hadoop
+1.start-all.sh	//deprecated
+2.start-dfs.sh	//new
+3.start-yarn.sh	//new
+
+//Stopping Hadoop
+1. stop-all.sh
+
+//Error handling
+In case of datanode not showing up after jps, check logs, if there is cluster compatibility issue then write following commands.
+1.stop-all.sh
+2.rm -Rf /usr/local/hadoop_tmp/hdfs/datanode/*	//This will remove datanode directories
+
+3.start-all.sh
+In case of namenode not showing up after jps,check logs, try the following command hdfs namenode -format
+
+Steps to delete existing hadoop 
+
+Command to delete user:  sudo deluser hduser
+
+Command to delete group:  sudo groupdel hadoop
+
+go to location where hadoop folder is present and issue the command: 
+						sudo rm -r hadoop
+						sudo rm -r hadoop_tmp/
+						
+
